@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronLeft, Ellipsis, Plus, Settings, SkipBack, SkipForward } from 'lucide-react';
+import { Check, ChevronLeft, Ellipsis, SkipBack, SkipForward } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -109,11 +109,11 @@ export default function ShoppingListPage() {
     setCategories(updatedCategories);
   };
 
-  const handleEditCategory = (index: number, newName: string) => {
-    const updatedCategories = [...cateogories];
-    updatedCategories[index].name = newName;
-    setCategories(updatedCategories);
-  };
+  // const handleEditCategory = (index: number, newName: string) => {
+  //   const updatedCategories = [...cateogories];
+  //   updatedCategories[index].name = newName;
+  //   setCategories(updatedCategories);
+  // };
 
   const handleSelectCategory = (index: number, id: string) => {
     const updatedList = list.map((item) => {
