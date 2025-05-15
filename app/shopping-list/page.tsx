@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSub,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -88,7 +87,7 @@ export default function Home() {
                 className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-500 hover:bg-teal-50"
                 onClick={handleAddItem}
               >
-                <Plus size={20} />
+                <Plus />
                 <div className="font-bold">リストを追加</div>
               </div>
             </DialogTrigger>
@@ -155,21 +154,26 @@ function ShoppingList({
     <>
       <div className="flex items-center justify-between gap-x-2 rounded p-2 hover:bg-neutral-100">
         <Link href={`/shopping-list/${id}`} className="flex flex-1 items-center gap-2">
-          <StickyNote size={20} className="text-neutral-400" />
+          <StickyNote className="text-neutral-400" />
           <div>{title}</div>
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="cursor-pointer rounded hover:bg-neutral-200">
-            <Ellipsis size={20} />
+            <Ellipsis />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuSub>
-              <DropdownMenuItem onClick={() => toast('共有リンクをコピーしました🥳')}>
-                共有リンクをコピー
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setOpen(true)}>リスト名を編集</DropdownMenuItem>
-            </DropdownMenuSub>
-            <DropdownMenuItem onClick={handleDelete}>リストを削除</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-md py-2"
+              onClick={() => toast('共有リンクをコピーしました🥳')}
+            >
+              共有リンクをコピー
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-md py-2" onClick={() => setOpen(true)}>
+              リスト名を編集
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-md py-2" onClick={handleDelete}>
+              リストを削除
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
