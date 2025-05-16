@@ -19,16 +19,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
-import { useState } from 'react';
-
-// TODO: Mock data for own shopping list
-const mockOwnShoppingList = [
-  { id: '79c68bfc-09f7-470e-91b8-219dbfe4e0a2', title: '業務スーパー' },
-  { id: 'f2b5c3d4-1a0e-4c8b-9f6e-7a2d3f4e5b6c', title: 'イオン' },
-  { id: 'a1b2c3d4-e5f6-7a8b-9c0d-e1f2g3h4i5j6', title: 'マルエツ' },
-  { id: 'b2c3d4e5-f6g7-8h9i-0j1k-l2m3n4o5p6q7', title: 'セブンイレブン' },
-  { id: 'c3d4e5f6-g7h8-i9j0-k1l2-m3n4o5p6q7r', title: 'ファミリーマート' },
-];
+import { useEffect, useRef, useState } from 'react';
+import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
 
 type ShoppingList = {
   id: string;
@@ -36,7 +28,7 @@ type ShoppingList = {
 };
 
 export default function Home() {
-  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>(mockOwnShoppingList);
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
 
@@ -64,9 +56,25 @@ export default function Home() {
     setOpen(false);
   };
 
+  const isFirstRender = useRef(true);
+
   const handleDeleteItem = (id: string) => {
     setShoppingLists(shoppingLists.filter((item) => item.id !== id));
   };
+
+  useEffect(() => {
+    const data = getLocalStorage(localStorageKey.SHOPPING_LIST);
+    if (data === undefined) return;
+    setShoppingLists(data);
+  }, []);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return; // 初回はスキップ
+    }
+    setLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
+  }, [shoppingLists]);
 
   return (
     <>
@@ -84,7 +92,7 @@ export default function Home() {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <div
-                className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-500 hover:bg-teal-50"
+                className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-400 hover:bg-teal-50"
                 onClick={handleAddItem}
               >
                 <Plus />
