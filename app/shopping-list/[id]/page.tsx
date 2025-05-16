@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronLeft, Ellipsis, SkipBack, SkipForward } from 'lucide-react';
+import { Check, ChevronLeft, Ellipsis, Plus, SkipBack, SkipForward } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -154,14 +154,17 @@ export default function ShoppingListPage() {
 
   return (
     <>
-      <Header categorySetting={() => setCategoryManagement(true)} />
-      <div>
-        <div className="flex justify-end px-4">
+      <div className="flex h-14 items-center justify-between bg-white px-4">
+        <div className="flex items-center gap-x-2">
+          <Link href="/shopping-list" className="text-sm underline">
+            <ChevronLeft />
+          </Link>
+          <div className="font-bold">タイトル</div>
+        </div>
+        <div className="flex items-center gap-x-4">
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-x-2 rounded-md border border-neutral-200 bg-white p-2 text-sm">
-                <span>新規アイテム追加</span>
-              </button>
+              <Plus />
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -209,7 +212,23 @@ export default function ShoppingListPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Ellipsis />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setCategoryManagement(true)}>
+                カテゴリを管理
+              </DropdownMenuItem>
+              <DropdownMenuItem>タイトルを編集</DropdownMenuItem>
+              <DropdownMenuItem>シートを共有</DropdownMenuItem>
+              <DropdownMenuItem>シートを削除</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+      </div>
+      <div>
+        <div className="flex justify-end px-4"></div>
         <div className="mb-16 p-2">
           {list.map(({ id, title, checked, category }, index) => (
             <div key={id}>
@@ -251,7 +270,6 @@ export default function ShoppingListPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuSub>
-                      <DropdownMenuItem>編集</DropdownMenuItem>
                       <DropdownMenuSubTrigger>カテゴリ選択</DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="p-0">
                         <Command>
@@ -275,6 +293,8 @@ export default function ShoppingListPage() {
                         </Command>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                    <DropdownMenuItem>編集</DropdownMenuItem>
+
                     <DropdownMenuItem onClick={() => handleDeleteItem(index)}>
                       削除
                     </DropdownMenuItem>
@@ -285,25 +305,23 @@ export default function ShoppingListPage() {
           ))}
         </div>
       </div>
-
       <div>
-        <div className="fixed bottom-0 flex h-16 w-full items-center justify-center gap-x-4 border-t border-neutral-200 bg-white">
-          <div></div>
+        <div className="fixed bottom-0 flex h-16 w-full items-center justify-center gap-x-6 bg-black">
           <button
-            className={`flex h-10 w-10 items-center justify-center rounded ${currentItemIndex === 0 && 'opacity-20'}`}
+            className={`flex h-10 w-10 items-center justify-center text-white ${currentItemIndex === 0 && 'opacity-50'}`}
             disabled={currentItemIndex === 0}
             onClick={() => setCurrentItemIndex((prev) => prev - 1)}
           >
             <SkipBack />
           </button>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-900 text-white"
+            className="flex h-10 w-10 items-center justify-center text-white"
             onClick={() => handleCheckboxChange(currentItemIndex)}
           >
             <Check />
           </button>
           <button
-            className={`flex h-10 w-10 items-center justify-center rounded bg-white ${currentItemIndex === mockShoppingList.length - 1 && 'opacity-50'}`}
+            className={`flex h-10 w-10 items-center justify-center text-white ${currentItemIndex === mockShoppingList.length - 1 && 'opacity-50'}`}
             disabled={currentItemIndex === mockShoppingList.length - 1}
             onClick={() => setCurrentItemIndex((prev) => prev + 1)}
           >
@@ -312,33 +330,6 @@ export default function ShoppingListPage() {
         </div>
       </div>
     </>
-  );
-}
-
-// Header component
-function Header({ categorySetting }: { categorySetting: () => void }) {
-  return (
-    <div className="flex h-14 items-center justify-between bg-white px-4">
-      <div className="flex items-center gap-x-2">
-        <Link href="/shopping-list" className="text-sm underline">
-          <ChevronLeft />
-        </Link>
-        <div className="font-bold">タイトル</div>
-      </div>
-      <div className="flex items-center gap-x-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Ellipsis />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={categorySetting}>カテゴリを管理</DropdownMenuItem>
-            <DropdownMenuItem>タイトルを編集</DropdownMenuItem>
-            <DropdownMenuItem>シートを共有</DropdownMenuItem>
-            <DropdownMenuItem>シートを削除</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
   );
 }
 
