@@ -7,7 +7,6 @@ type LocalStorageValueKey = (typeof localStorageKey)[keyof typeof localStorageKe
 
 export const getLocalStorage = (key: LocalStorageValueKey) => {
   const item = localStorage.getItem(key);
-  console.log('getLocalStorage', item);
   return item ? JSON.parse(item) : undefined;
 };
 
