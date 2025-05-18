@@ -27,18 +27,37 @@ type ShoppingList = {
   title: string;
 };
 
+const addShoppingList = async (title: string): Promise<ShoppingList> => {
+  const res = await fetch('/api/shopping-list', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ title }),
+  });
+  const data = await res.json();
+  console.log(data);
+  return data;
+};
+
 export default function Home() {
-  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
 
-  const handleAddItem = () => {
+  const isFirstRender = useRef(true);
+
+  // 買い物リスト追加処理
+  const handleAddItem = async () => {
     if (value.trim() === '') return;
-    const newItem = {
-      id: crypto.randomUUID(),
-      title: value,
-    };
-    setShoppingLists([...shoppingLists, newItem]);
+
+    try {
+      const newShoppingList = await addShoppingList(value);
+      setShoppingLists([...shoppingLists, newShoppingList]);
+    } catch (e) {
+      console.error('error', e);
+    }
+
     setValue('');
     setOpen(false);
   };
@@ -55,8 +74,6 @@ export default function Home() {
     setValue('');
     setOpen(false);
   };
-
-  const isFirstRender = useRef(true);
 
   const handleDeleteItem = (id: string) => {
     setShoppingLists(shoppingLists.filter((item) => item.id !== id));
@@ -75,6 +92,20 @@ export default function Home() {
     }
     setLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
   }, [shoppingLists]);
+
+  useEffect(() => {
+    // const getShoppingList = async () => {
+    //   const res = await fetch('/api/shopping-list', {
+    //     method: 'GET',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //   });
+    //   const data = await res.json();
+    //   console.log(data);
+    // };
+    // getShoppingList();
+  }, []);
 
   return (
     <>
