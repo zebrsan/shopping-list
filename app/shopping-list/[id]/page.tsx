@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronLeft, Ellipsis, Plus, SkipBack, SkipForward } from 'lucide-react';
+import { Check, ChevronLeft, Ellipsis, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -50,25 +50,6 @@ type CategoryItem = {
   name: string;
 };
 
-const mockShoppingList = [
-  { id: '1', title: 'じゃがいも', checked: false, category: '野菜' },
-  { id: '2', title: 'にんじん', checked: false, category: '野菜' },
-  { id: '3', title: 'たまねぎ', checked: false, category: '野菜' },
-  { id: '4', title: 'キャベツ', checked: false, category: '野菜' },
-  { id: '5', title: 'ブロッコリー', checked: false, category: '野菜' },
-  { id: '6', title: 'トマト', checked: false, category: '野菜' },
-  { id: '7', title: 'きゅうり', checked: false, category: '野菜' },
-  { id: '8', title: 'なす', checked: false, category: '野菜' },
-  { id: '9', title: 'ピーマン', checked: false, category: '野菜' },
-  { id: '10', title: 'ほうれん草', checked: false, category: '野菜' },
-  { id: '11', title: '小松菜', checked: false, category: '野菜' },
-  { id: '12', title: '大根', checked: false, category: '野菜' },
-  { id: '13', title: '白菜', checked: false, category: '野菜' },
-  { id: '14', title: 'セロリ', checked: false, category: '野菜' },
-  { id: '15', title: 'パセリ', checked: false, category: '野菜' },
-  { id: '16', title: 'バジル', checked: false, category: '野菜' },
-];
-
 const modes = {
   CATEGORY_MANAGEMENT: 'category_management',
   CHECK_LIST: 'check_list',
@@ -76,7 +57,7 @@ const modes = {
 
 export default function ShoppingListPage() {
   const [list, setList] = useState<ShoppingItemData[]>([]);
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  // const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [cateogories, setCategories] = useState<ShoppingCategoryData[]>([]);
   const [value, setValue] = useState('');
   // const [categoryValue, setCategoryValue] = useState('');
@@ -157,31 +138,20 @@ export default function ShoppingListPage() {
     setList([data, ...list]);
   };
 
-  const getShoppingItem = async () => {
-    const res = await fetch(`/api/shopping-item?shopping_list_id=${params.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await res.json();
-    setList(data);
-  };
-
-  const getShoppingCategory = async () => {
-    const res = await fetch(`/api/shopping-category?shopping_list_id=${params.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await res.json();
-    setCategories(data);
-  };
+  // const getShoppingCategory = async () => {
+  //   const res = await fetch(`/api/shopping-category?shopping_list_id=${params.id}`, {
+  //     method: 'GET',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //   });
+  //   const data = await res.json();
+  //   setCategories(data);
+  // };
 
   useEffect(() => {
     const getShoppingList = async () => {
-      const res = await fetch(`/api/shopping-list/${params.id}`, {
+      const res = await fetch(`/api/shopping-list?id=${params.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -190,13 +160,31 @@ export default function ShoppingListPage() {
       const { title } = await res.json();
       setTitle(title);
     };
+    const getShoppingItem = async () => {
+      const res = await fetch(`/api/shopping-item?shopping_list_id=${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      setList(data);
+      getShoppingList();
+    };
+    const getShoppingCategory = async () => {
+      const res = await fetch(`/api/shopping-category?shopping_list_id=${params.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      setCategories(data);
+    };
     getShoppingList();
-  }, []);
-
-  useEffect(() => {
-    getShoppingCategory();
     getShoppingItem();
-  }, [getShoppingCategory, getShoppingItem, params.id]);
+    getShoppingCategory();
+  }, [params.id]);
 
   if (mode === modes.CHECK_LIST) {
     return (
@@ -248,7 +236,6 @@ export default function ShoppingListPage() {
                   data={item}
                   index={index}
                   categories={cateogories}
-                  currentItemIndex={currentItemIndex}
                   handleCheckboxChange={() => handleCheckboxChange(index)}
                   handleDeleteItem={() => handleDeleteItem(index)}
                   handleSelectCategory={handleSelectCategory}
@@ -258,7 +245,7 @@ export default function ShoppingListPage() {
           </div>
         </div>
         {/* footer */}
-        <div>
+        {/* <div>
           <div className="fixed bottom-0 flex h-16 w-full items-center justify-center gap-x-6 bg-black">
             <button
               className={`flex h-10 w-10 items-center justify-center text-white ${currentItemIndex === 0 && 'opacity-50'}`}
@@ -281,7 +268,7 @@ export default function ShoppingListPage() {
               <SkipForward />
             </button>
           </div>
-        </div>
+        </div> */}
         <Dialog open={openAddItemDialog} onOpenChange={setOpenAddItemDialog}>
           <DialogContent>
             <DialogHeader>
@@ -350,7 +337,6 @@ export default function ShoppingListPage() {
 function CheckListItem({
   data,
   index,
-  currentItemIndex,
   categories,
   handleCheckboxChange,
   handleDeleteItem,
@@ -358,7 +344,6 @@ function CheckListItem({
 }: {
   data: ShoppingItemData;
   index: number;
-  currentItemIndex: number;
   categories: { id: string; name: string }[];
   handleCheckboxChange: (index: number) => void;
   handleDeleteItem: (index: number) => void;
@@ -368,11 +353,7 @@ function CheckListItem({
 
   return (
     <>
-      <div
-        className={`flex items-center justify-between gap-x-2 p-2 ${
-          currentItemIndex === index && 'rounded-sm bg-teal-50 outline-2 outline-teal-400'
-        }`}
-      >
+      <div className={`flex items-center justify-between gap-x-2 p-2`}>
         <div className="flex items-center gap-x-2">
           <input
             type="checkbox"
