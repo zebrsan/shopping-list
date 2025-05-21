@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { useParams } from 'next/navigation';
 
 export function CategoryManagement({
   list,
@@ -37,12 +38,26 @@ export function CategoryManagement({
 }) {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
+  const params = useParams();
 
   const handleAddItem = () => {
     setValue('');
-    const newCategory = { id: String(list.length + 1), name: value };
-    onAdd(newCategory);
+    // const newCategory = { id: String(list.length + 1), name: value };
+    // onAdd(newCategory);
+    addShoppingCategory();
     setOpen(false);
+  };
+
+  const addShoppingCategory = async () => {
+    const res = await fetch('/api/shopping-category', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: value, shopping_list_id: params.id }),
+    });
+    const data = await res.json();
+    onAdd(data);
   };
 
   // TODO: カテゴリ名の並び順制御（チェックリスト画面にもその並び順でカテゴリが並ぶようにする）
