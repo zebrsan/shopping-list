@@ -54,7 +54,7 @@ const modes = {
 export default function ShoppingListPage() {
   const [list, setList] = useState<ShoppingItemData[]>([]);
   const [categories, setCategories] = useState<ShoppingCategoryData[]>([]); // shopping_category
-  const [categoryValue, setCategoryValue] = useState('');
+  const [categoryValue, setCategoryValue] = useState<string | undefined>(undefined);
   const [value, setValue] = useState('');
   const [mode, setMode] = useState<(typeof modes)[keyof typeof modes]>(modes.CHECK_LIST);
   const [title, setTitle] = useState('');
@@ -227,7 +227,11 @@ export default function ShoppingListPage() {
               <div>
                 <div>カテゴリ</div>
                 <div>
-                  <Select onValueChange={setCategoryValue}>
+                  <Select
+                    value={categoryValue}
+                    onValueChange={setCategoryValue}
+                    disabled={categories.length === 0}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="カテゴリを選択" />
                     </SelectTrigger>
