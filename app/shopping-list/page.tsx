@@ -21,29 +21,13 @@ import { toast } from 'sonner';
 
 import { useEffect, useRef, useState } from 'react';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
+import { addShoppingList } from '@/lib/apiHandle';
+import { ShoppingListData } from '@/types/shoppingList';
 
-type ShoppingList = {
-  id: string;
-  title: string;
-};
-
-const addShoppingList = async (title: string): Promise<ShoppingList> => {
-  const res = await fetch('/api/shopping-list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ title }),
-  });
-  const data = await res.json();
-  console.log(data);
-  return data;
-};
-
-export default function Home() {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
+export default function ShoppingListsPage() {
+  const [open, setOpen] = useState(false); // ショッピングリストの追加ダイアログ表示制御
+  const [value, setValue] = useState(''); // ショッピングリストの追加value
+  const [shoppingLists, setShoppingLists] = useState<ShoppingListData[]>([]); // ショッピングリスト一覧
 
   const isFirstRender = useRef(true);
 
@@ -51,13 +35,9 @@ export default function Home() {
   const handleAddItem = async () => {
     if (value.trim() === '') return;
 
-    try {
-      const newShoppingList = await addShoppingList(value);
-      setShoppingLists([...shoppingLists, newShoppingList]);
-    } catch (e) {
-      console.error('error', e);
-    }
+    const newShoppingList = await addShoppingList(value);
 
+    setShoppingLists([...shoppingLists, newShoppingList]);
     setValue('');
     setOpen(false);
   };
@@ -88,24 +68,10 @@ export default function Home() {
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-      return; // 初回はスキップ
+      return;
     }
-    setLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
+    setLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
   }, [shoppingLists]);
-
-  useEffect(() => {
-    // const getShoppingList = async () => {
-    //   const res = await fetch('/api/shopping-list', {
-    //     method: 'GET',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //   });
-    //   const data = await res.json();
-    //   console.log(data);
-    // };
-    // getShoppingList();
-  }, []);
 
   return (
     <>

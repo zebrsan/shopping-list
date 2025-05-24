@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { useParams } from 'next/navigation';
+import { ShoppingCategoryData } from '@/types/shoppingCategory';
 
 export function CategoryManagement({
   list,
@@ -32,9 +33,9 @@ export function CategoryManagement({
 }: {
   list: { id: string; name: string }[];
   onChageMode: () => void;
-  onAdd: (category: { id: string; name: string }) => void;
-  onEdit: (item: { id: string; name: string }) => void;
-  onDelete: (index: number) => void;
+  onAdd: (category: ShoppingCategoryData) => void;
+  onEdit: (item: ShoppingCategoryData) => void;
+  onDelete: (id: string) => void;
 }) {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
@@ -42,8 +43,6 @@ export function CategoryManagement({
 
   const handleAddItem = () => {
     setValue('');
-    // const newCategory = { id: String(list.length + 1), name: value };
-    // onAdd(newCategory);
     addShoppingCategory();
     setOpen(false);
   };
@@ -54,7 +53,11 @@ export function CategoryManagement({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name: value, shopping_list_id: params.id }),
+      body: JSON.stringify({
+        name: value,
+        shopping_list_id: params.id,
+        sort_order: list.length + 1,
+      }),
     });
     const data = await res.json();
     onAdd(data);
@@ -73,12 +76,12 @@ export function CategoryManagement({
         </div>
       </div>
       <div className="px-2">
-        {list.map((item, index) => (
+        {list.map((item) => (
           <CategoryItem
             key={item.id}
             item={item}
             onEdit={onEdit}
-            onDelete={() => onDelete(index)}
+            onDelete={() => onDelete(item.id)}
           />
         ))}
       </div>
@@ -136,7 +139,7 @@ function CategoryItem({
   onDelete,
 }: {
   item: { id: string; name: string };
-  onEdit: (item: { id: string; name: string }) => void;
+  onEdit: (item: ShoppingCategoryData) => void;
   onDelete: () => void;
 }) {
   const { id, name } = item;
@@ -146,7 +149,7 @@ function CategoryItem({
 
   const handleEdit = () => {
     setIsEdit(false);
-    onEdit({ id, name: value });
+    onEdit({ id, name: value, sort_order: 1 });
   };
 
   return (
