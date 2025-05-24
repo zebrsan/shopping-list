@@ -45,7 +45,7 @@ export const getShoppingItem = async (shopingListId: string) => {
 export const addShoppingItem = async (
   name: string,
   shoppingListId: string,
-  categoryId: string,
+  categoryId: string | null,
 ): Promise<ShoppingItemData> => {
   const res = await fetch('/api/shopping-item', {
     method: 'POST',
