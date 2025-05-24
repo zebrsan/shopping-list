@@ -15,6 +15,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import {
   Dialog,
   DialogContent,
@@ -23,32 +24,27 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { CategoryManagement } from './category-management';
 import { useParams } from 'next/navigation';
-
-type ShoppingItemData = {
-  id: string;
-  name: string;
-  checked: boolean;
-  category_id: string;
-};
-
-type ShoppingCategoryData = {
-  id: string;
-  name: string;
-};
-
-type CategoryItem = {
-  id: string;
-  name: string;
-};
+import {
+  getShoppingList,
+  getShoppingItem,
+  getShoppingCategory,
+  addShoppingItem,
+  deleteShoppingItem,
+  updateShoppingItem,
+  deleteShoppingCategory,
+  updateShoppingCategory,
+} from '@/lib/apiHandle';
+import { ShoppingItemData } from '@/types/shoppingItem';
+import { ShoppingCategoryData } from '@/types/shoppingCategory';
 
 const modes = {
   CATEGORY_MANAGEMENT: 'category_management',
@@ -57,133 +53,112 @@ const modes = {
 
 export default function ShoppingListPage() {
   const [list, setList] = useState<ShoppingItemData[]>([]);
-  // const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [cateogories, setCategories] = useState<ShoppingCategoryData[]>([]);
+  const [categories, setCategories] = useState<ShoppingCategoryData[]>([]); // shopping_category
+  const [categoryValue, setCategoryValue] = useState('');
   const [value, setValue] = useState('');
-  // const [categoryValue, setCategoryValue] = useState('');
   const [mode, setMode] = useState<(typeof modes)[keyof typeof modes]>(modes.CHECK_LIST);
-  const params = useParams();
   const [title, setTitle] = useState('');
 
+  const params = useParams();
   // チェックリスト追加ダイアログ
   const [openAddItemDialog, setOpenAddItemDialog] = useState(false);
 
   // アイテム操作
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     setValue('');
-    addShoppingItem();
+    setCategoryValue('');
+    if (typeof params.id === 'string') {
+      const res = await addShoppingItem(value, params.id, categoryValue ?? null);
+      setList([res, ...list]);
+    }
   };
 
-  const handleCheckboxChange = (index: number) => {
-    const updatedList = [...list];
-    updatedList[index].checked = !updatedList[index].checked;
-    setList(updatedList);
+  const handleEditItem = async (item: ShoppingItemData) => {
+    const updateList = list.map((l) => {
+      if (l.id === item.id) {
+        return item;
+      }
+      return l;
+    });
+    await updateShoppingItem(item.id, item.name, item.checked, item.category_id);
+    setList(updateList);
   };
 
-  const handleDeleteItem = (index: number) => {
-    const updatedList = list.filter((_, i) => i !== index);
+  const handleDeleteItem = async (id: string) => {
+    const updatedList = list.filter((_) => _.id !== id);
+    await deleteShoppingItem(id);
     setList(updatedList);
   };
 
   // カテゴリ操作
-  const handleAddCategory = (newCategory: { id: string; name: string }) => {
-    setCategories([newCategory, ...cateogories]);
+  const handleAddCategory = (newCategory: ShoppingCategoryData) => {
+    setCategories([...categories, newCategory]);
   };
 
-  const handleDeleteCategory = (index: number) => {
-    const updatedCategories = cateogories.filter((_, i) => i !== index);
+  const handleDeleteCategory = async (shoppingCategoryId: string) => {
+    const updatedCategories = categories.filter((category) => category.id !== shoppingCategoryId);
+    await deleteShoppingCategory(shoppingCategoryId);
     setCategories(updatedCategories);
   };
 
-  const handleEditCategory = (newItem: CategoryItem) => {
+  const handleEditCategory = async (newItem: ShoppingCategoryData) => {
+    await updateShoppingCategory(newItem.id, newItem.name, newItem.sort_order);
     setCategories(
-      cateogories.map((category) => {
+      categories.map((category) => {
         if (category.id === newItem.id) return { ...category, name: newItem.name };
         return category;
       }),
     );
   };
 
-  const handleSelectCategory = (index: number, id: string) => {
-    console.info(index, id);
-    // const updatedList = list.map((item) => {
-    //   if (item.id === id) {
-    //     return { ...item, category_id: cateogories[index].name };
-    //   }
-    //   return item;
-    // });
-    // TODO: warningが表示される（ドロップダウンが閉じ切っていない状態で画面外に行った際に警告が出る）
-    // const sorted = sortByCategory(updatedList);
-    // setList(sorted);
+  const handleSelectCategory = async (categoryId: string, id: string) => {
+    // 非同期処理をすべて待つ
+    const updatedList = await Promise.all(
+      list.map(async (item) => {
+        if (item.id === id) {
+          const updated = { ...item, category_id: categoryId };
+          await updateShoppingItem(item.id, item.name, item.checked, categoryId);
+          return updated;
+        }
+        return item;
+      }),
+    );
+
+    const sorted = sortItemsByCategory(updatedList, categories);
+    setList(sorted);
   };
 
-  // const sortByCategory = (items: ShoppingItemData[]) => {
-  //   console.log('sortByCategory', items);
-  //   return [...items].sort((a, b) => {
-  //     const aIndex = cateogories.findIndex((category) => category.name === a.category);
-  //     const bIndex = cateogories.findIndex((category) => category.name === b.category);
-  //     return aIndex - bIndex;
-  //   });
-  // };
+  const sortItemsByCategory = (
+    items: ShoppingItemData[],
+    _categories: ShoppingCategoryData[],
+  ): ShoppingItemData[] => {
+    const categoryMap = new Map(_categories.map((c) => [c.id, c]));
 
-  const addShoppingItem = async () => {
-    const res = await fetch('/api/shopping-item', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: value, shopping_list_id: params.id }),
+    return [...items].sort((a, b) => {
+      const aCat = categoryMap.get(a.category_id);
+      const bCat = categoryMap.get(b.category_id);
+
+      // カテゴリがない場合の処理
+      const aOrder = aCat ? aCat.sort_order : -Infinity;
+      const bOrder = bCat ? bCat.sort_order : -Infinity;
+
+      return aOrder - bOrder;
     });
-    const data = await res.json();
-    setList([data, ...list]);
   };
-
-  // const getShoppingCategory = async () => {
-  //   const res = await fetch(`/api/shopping-category?shopping_list_id=${params.id}`, {
-  //     method: 'GET',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //   });
-  //   const data = await res.json();
-  //   setCategories(data);
-  // };
 
   useEffect(() => {
-    const getShoppingList = async () => {
-      const res = await fetch(`/api/shopping-list?id=${params.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const { title } = await res.json();
-      setTitle(title);
+    const init = async () => {
+      if (typeof params.id === 'string') {
+        const title = await getShoppingList(params.id);
+        const shoppingItem = await getShoppingItem(params.id);
+        const category = await getShoppingCategory(params.id);
+        setTitle(title);
+        setCategories(category);
+        const sorted = sortItemsByCategory(shoppingItem, category);
+        setList(sorted);
+      }
     };
-    const getShoppingItem = async () => {
-      const res = await fetch(`/api/shopping-item?shopping_list_id=${params.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await res.json();
-      setList(data);
-      getShoppingList();
-    };
-    const getShoppingCategory = async () => {
-      const res = await fetch(`/api/shopping-category?shopping_list_id=${params.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await res.json();
-      setCategories(data);
-    };
-    getShoppingList();
-    getShoppingItem();
-    getShoppingCategory();
+    init();
   }, [params.id]);
 
   if (mode === modes.CHECK_LIST) {
@@ -221,54 +196,27 @@ export default function ShoppingListPage() {
           <div className="flex justify-end px-4"></div>
           <div className="mb-16 p-2">
             {list.map((item, index) => (
-              <div key={item.id}>
-                {/* カテゴリの区切り */}
-                {list[index - 1]?.category_id !== item.category_id && (
+              <div key={index}>
+                {list.length > 1 && list[index - 1]?.category_id !== item.category_id && (
                   <div className="relative my-5 h-[1px] w-full bg-neutral-400">
                     <div className="absolute top-1/2 left-0 flex h-4 w-full -translate-y-1/2 items-center justify-center">
                       <div className="rounded border border-neutral-400 bg-white px-2 py-0.5 text-[13px]">
-                        {item.category_id}
+                        {categories.find((c) => c.id === item.category_id)?.name ?? 'カテゴリなし'}
                       </div>
                     </div>
                   </div>
                 )}
                 <CheckListItem
                   data={item}
-                  index={index}
-                  categories={cateogories}
-                  handleCheckboxChange={() => handleCheckboxChange(index)}
-                  handleDeleteItem={() => handleDeleteItem(index)}
+                  categories={categories}
+                  handleDeleteItem={handleDeleteItem}
                   handleSelectCategory={handleSelectCategory}
+                  onEdit={handleEditItem}
                 />
               </div>
             ))}
           </div>
         </div>
-        {/* footer */}
-        {/* <div>
-          <div className="fixed bottom-0 flex h-16 w-full items-center justify-center gap-x-6 bg-black">
-            <button
-              className={`flex h-10 w-10 items-center justify-center text-white ${currentItemIndex === 0 && 'opacity-50'}`}
-              disabled={currentItemIndex === 0}
-              onClick={() => setCurrentItemIndex((prev) => prev - 1)}
-            >
-              <SkipBack />
-            </button>
-            <button
-              className="flex h-10 w-10 items-center justify-center text-white"
-              onClick={() => handleCheckboxChange(currentItemIndex)}
-            >
-              <Check />
-            </button>
-            <button
-              className={`flex h-10 w-10 items-center justify-center text-white ${currentItemIndex === mockShoppingList.length - 1 && 'opacity-50'}`}
-              disabled={currentItemIndex === mockShoppingList.length - 1}
-              onClick={() => setCurrentItemIndex((prev) => prev + 1)}
-            >
-              <SkipForward />
-            </button>
-          </div>
-        </div> */}
         <Dialog open={openAddItemDialog} onOpenChange={setOpenAddItemDialog}>
           <DialogContent>
             <DialogHeader>
@@ -279,18 +227,18 @@ export default function ShoppingListPage() {
               <div>
                 <div>カテゴリ</div>
                 <div>
-                  {/* <Select onValueChange={setCategoryValue}>
+                  <Select onValueChange={setCategoryValue}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="カテゴリを選択" />
                     </SelectTrigger>
                     <SelectContent>
-                      {cateogories.map((category) => (
-                        <SelectItem key={category.id} value={category.name}>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
-                  </Select> */}
+                  </Select>
                 </div>
               </div>
               <div>
@@ -324,7 +272,7 @@ export default function ShoppingListPage() {
   if (mode === modes.CATEGORY_MANAGEMENT) {
     return (
       <CategoryManagement
-        list={cateogories}
+        list={categories}
         onChageMode={() => setMode(modes.CHECK_LIST)}
         onAdd={handleAddCategory}
         onEdit={handleEditCategory}
@@ -336,20 +284,22 @@ export default function ShoppingListPage() {
 
 function CheckListItem({
   data,
-  index,
   categories,
-  handleCheckboxChange,
   handleDeleteItem,
   handleSelectCategory,
+  onEdit,
 }: {
   data: ShoppingItemData;
-  index: number;
   categories: { id: string; name: string }[];
-  handleCheckboxChange: (index: number) => void;
-  handleDeleteItem: (index: number) => void;
-  handleSelectCategory: (index: number, id: string) => void;
+  handleDeleteItem: (id: string) => void;
+  handleSelectCategory: (categoryId: string, id: string) => void;
+  onEdit: (data: ShoppingItemData) => void;
 }) {
-  const { id, name, checked } = data;
+  const { id, name, checked, category_id } = data;
+  const [openEditItemDialog, setOpenEditItemDialog] = useState(false);
+  const [value, setValue] = useState(name);
+
+  const categoryName = categories.find((c) => c.id === category_id);
 
   return (
     <>
@@ -358,7 +308,7 @@ function CheckListItem({
           <input
             type="checkbox"
             checked={checked}
-            onChange={() => handleCheckboxChange(index)}
+            onChange={(e) => onEdit({ ...data, checked: e.target.checked })}
             className="hidden"
             id={`checkbox-${id}`}
           />
@@ -371,22 +321,31 @@ function CheckListItem({
             {checked && <Check size={16} color="white" />}
           </label>
           <div className="text-md">{name}</div>
+          <div className="rounded bg-teal-100 px-1 py-0.5 text-xs text-teal-600">
+            {categoryName?.name ?? 'カテゴリなし'}
+          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Ellipsis />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
+          <DropdownMenuContent>
             <DropdownMenuGroup>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>カテゴリ変更</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger
+                  disabled={categories.length === 0}
+                  className={`${categories.length === 0 && 'text-muted-foreground'}`}
+                >
+                  カテゴリ変更
+                </DropdownMenuSubTrigger>
+
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
-                    {categories.map((category, i) => (
+                    {categories.map((category) => (
                       <DropdownMenuItem
                         key={category.id}
                         onSelect={() => {
-                          handleSelectCategory(i, id);
+                          handleSelectCategory(category.id, id);
                         }}
                       >
                         {category.name}
@@ -395,12 +354,43 @@ function CheckListItem({
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
-              <DropdownMenuItem>編集</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDeleteItem(index)}>削除</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setOpenEditItemDialog(true)}>編集</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDeleteItem(id)}>削除</DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <Dialog open={openEditItemDialog} onOpenChange={setOpenEditItemDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>アイテム名を変更</DialogTitle>
+            <DialogDescription />
+          </DialogHeader>
+          <div>
+            <div>
+              <div>アイテム名</div>
+              <div>
+                <input
+                  value={value}
+                  placeholder="アイテム名を入力"
+                  onChange={(e) => setValue(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              className="text-md h-10 w-full rounded bg-black font-bold text-white"
+              onClick={() => {
+                setOpenEditItemDialog(false);
+                onEdit({ ...data, name: value });
+              }}
+            >
+              更新
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
