@@ -33,18 +33,10 @@ import {
 } from '@/components/ui/select';
 import { CategoryManagement } from './category-management';
 import { useParams } from 'next/navigation';
-import {
-  getShoppingList,
-  getShoppingItem,
-  getShoppingCategory,
-  addShoppingItem,
-  deleteShoppingItem,
-  updateShoppingItem,
-  deleteShoppingCategory,
-  updateShoppingCategory,
-} from '@/lib/apiHandle';
-import { ShoppingItemData } from '@/types/shoppingItem';
+import { deleteShoppingCategory, updateShoppingCategory } from '@/lib/apiHandle';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
+import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
+import { ShoppingCategory, ShoppingItem, ShoppingList } from '@/types/shoppingList';
 
 const modes = {
   CATEGORY_MANAGEMENT: 'category_management',
@@ -52,47 +44,128 @@ const modes = {
 } as const;
 
 export default function ShoppingListPage() {
-  const [list, setList] = useState<ShoppingItemData[]>([]);
-  const [categories, setCategories] = useState<ShoppingCategoryData[]>([]); // shopping_category
+  const params = useParams();
+  const [list, setList] = useState<ShoppingItem[]>([]);
+  const [categories, setCategories] = useState<ShoppingCategory[]>([]); // shopping_category
   const [categoryValue, setCategoryValue] = useState<string | undefined>(undefined);
   const [value, setValue] = useState('');
   const [mode, setMode] = useState<(typeof modes)[keyof typeof modes]>(modes.CHECK_LIST);
   const [title, setTitle] = useState('');
 
-  const params = useParams();
   // チェックリスト追加ダイアログ
   const [openAddItemDialog, setOpenAddItemDialog] = useState(false);
 
   // アイテム操作
-  const handleAddItem = async () => {
+  const handleAddItem = () => {
     setValue('');
     setCategoryValue('');
-    if (typeof params.id === 'string') {
-      const res = await addShoppingItem(value, params.id, categoryValue ?? null);
-      setList([res, ...list]);
-    }
+    const newList = [
+      ...list,
+      { id: crypto.randomUUID(), name: value, categoryId: categoryValue ?? null, checked: false },
+    ];
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          items: newList,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
+    const sorted = sortItemsByCategory(newList, categories);
+    setList(sorted);
   };
 
-  const handleEditItem = async (item: ShoppingItemData) => {
-    const updateList = list.map((l) => {
+  const handleEditItem = async (item: ShoppingItem) => {
+    const newList = list.map((l) => {
       if (l.id === item.id) {
         return item;
       }
       return l;
     });
-    await updateShoppingItem(item.id, item.name, item.checked, item.category_id);
-    setList(updateList);
+    // await updateShoppingItem(item.id, item.name, item.checked, item.category_id);
+    setList(newList);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          items: newList,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
   const handleDeleteItem = async (id: string) => {
     const updatedList = list.filter((_) => _.id !== id);
-    await deleteShoppingItem(id);
+    // await deleteShoppingItem(id);
     setList(updatedList);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          items: updatedList,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
+  };
+
+  const handleSelectCategory = async (categoryId: string, id: string) => {
+    const newList = list.map((l) => {
+      if (l.id === id) {
+        return { ...l, categoryId };
+      }
+      return l;
+    });
+
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          items: newList,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
+
+    const sorted = sortItemsByCategory(newList, categories);
+    setList(sorted);
   };
 
   // カテゴリ操作
-  const handleAddCategory = (newCategory: ShoppingCategoryData) => {
-    setCategories([...categories, newCategory]);
+  const handleAddCategory = (newCategory: ShoppingCategory) => {
+    const newCategories = [...categories, newCategory];
+    setCategories(newCategories);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          categories: newCategories,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
   const handleDeleteCategory = async (shoppingCategoryId: string) => {
@@ -111,54 +184,37 @@ export default function ShoppingListPage() {
     );
   };
 
-  const handleSelectCategory = async (categoryId: string, id: string) => {
-    // 非同期処理をすべて待つ
-    const updatedList = await Promise.all(
-      list.map(async (item) => {
-        if (item.id === id) {
-          const updated = { ...item, category_id: categoryId };
-          await updateShoppingItem(item.id, item.name, item.checked, categoryId);
-          return updated;
-        }
-        return item;
-      }),
-    );
-
-    const sorted = sortItemsByCategory(updatedList, categories);
-    setList(sorted);
-  };
-
   const sortItemsByCategory = (
-    items: ShoppingItemData[],
-    _categories: ShoppingCategoryData[],
-  ): ShoppingItemData[] => {
+    items: ShoppingItem[],
+    _categories: ShoppingCategory[],
+  ): ShoppingItem[] => {
+    console.log(items, _categories);
     const categoryMap = new Map(_categories.map((c) => [c.id, c]));
 
     return [...items].sort((a, b) => {
-      const aCat = categoryMap.get(a.category_id);
-      const bCat = categoryMap.get(b.category_id);
+      const aCat = categoryMap.get(a.categoryId ?? '');
+      const bCat = categoryMap.get(b.categoryId ?? '');
 
       // カテゴリがない場合の処理
-      const aOrder = aCat ? aCat.sort_order : -Infinity;
-      const bOrder = bCat ? bCat.sort_order : -Infinity;
+      const aOrder = aCat ? aCat.order : -Infinity;
+      const bOrder = bCat ? bCat.order : -Infinity;
 
       return aOrder - bOrder;
     });
   };
 
+  // fetch shoppinglist data from localstorage
   useEffect(() => {
-    const init = async () => {
-      if (typeof params.id === 'string') {
-        const title = await getShoppingList(params.id);
-        const shoppingItem = await getShoppingItem(params.id);
-        const category = await getShoppingCategory(params.id);
-        setTitle(title);
-        setCategories(category);
-        const sorted = sortItemsByCategory(shoppingItem, category);
-        setList(sorted);
-      }
+    const loadShoppingList = () => {
+      const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+      if (!data) return;
+      const shoppingList = data.find((d) => d.id === params.id);
+      if (!shoppingList) return;
+      setTitle(shoppingList.name);
+      setList(shoppingList.items);
+      setCategories(shoppingList.categories);
     };
-    init();
+    loadShoppingList();
   }, [params.id]);
 
   if (mode === modes.CHECK_LIST) {
@@ -197,11 +253,11 @@ export default function ShoppingListPage() {
           <div className="mb-16 p-2">
             {list.map((item, index) => (
               <div key={index}>
-                {list.length > 1 && list[index - 1]?.category_id !== item.category_id && (
-                  <div className="relative my-5 h-[1px] w-full bg-neutral-400">
-                    <div className="absolute top-1/2 left-0 flex h-4 w-full -translate-y-1/2 items-center justify-center">
-                      <div className="rounded border border-neutral-400 bg-white px-2 py-0.5 text-[13px]">
-                        {categories.find((c) => c.id === item.category_id)?.name ?? 'カテゴリなし'}
+                {list.length > 1 && list[index - 1]?.categoryId !== item.categoryId && (
+                  <div className="relative my-5 h-[1px] w-full bg-neutral-200">
+                    <div className="absolute top-1/2 left-2 flex h-4 w-full -translate-y-1/2 items-center justify-start">
+                      <div className="rounded bg-white px-2 py-0.5 text-[13px] text-neutral-500">
+                        {categories.find((c) => c.id === item.categoryId)?.name ?? 'カテゴリなし'}
                       </div>
                     </div>
                   </div>
@@ -293,17 +349,17 @@ function CheckListItem({
   handleSelectCategory,
   onEdit,
 }: {
-  data: ShoppingItemData;
+  data: ShoppingItem;
   categories: { id: string; name: string }[];
   handleDeleteItem: (id: string) => void;
   handleSelectCategory: (categoryId: string, id: string) => void;
-  onEdit: (data: ShoppingItemData) => void;
+  onEdit: (data: ShoppingItem) => void;
 }) {
-  const { id, name, checked, category_id } = data;
+  const { id, name, checked, categoryId } = data;
   const [openEditItemDialog, setOpenEditItemDialog] = useState(false);
   const [value, setValue] = useState(name);
 
-  const categoryName = categories.find((c) => c.id === category_id);
+  const categoryName = categories.find((c) => c.id === categoryId);
 
   return (
     <>
