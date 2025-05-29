@@ -21,13 +21,12 @@ import { toast } from 'sonner';
 
 import { useEffect, useRef, useState } from 'react';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
-import { addShoppingList } from '@/lib/apiHandle';
-import { ShoppingListData } from '@/types/shoppingList';
+import { ShoppingList } from '@/types/shoppingList';
 
 export default function ShoppingListsPage() {
   const [open, setOpen] = useState(false); // ショッピングリストの追加ダイアログ表示制御
   const [value, setValue] = useState(''); // ショッピングリストの追加value
-  const [shoppingLists, setShoppingLists] = useState<ShoppingListData[]>([]); // ショッピングリスト一覧
+  const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]); // ショッピングリスト一覧
 
   const isFirstRender = useRef(true);
 
@@ -35,18 +34,18 @@ export default function ShoppingListsPage() {
   const handleAddItem = async () => {
     if (value.trim() === '') return;
 
-    const newShoppingList = await addShoppingList(value);
+    const list = { id: crypto.randomUUID(), name: value, items: [], categories: [] };
 
-    setShoppingLists([...shoppingLists, newShoppingList]);
+    setShoppingLists([...shoppingLists, list]);
     setValue('');
     setOpen(false);
   };
 
-  const handleEdit = ({ id, title }: { id: string; title: string }) => {
+  const handleEdit = ({ id, name }: { id: string; name: string }) => {
     setShoppingLists(
       shoppingLists.map((item) => {
         if (item.id === id) {
-          return { ...item, title: title };
+          return { ...item, name: name };
         }
         return item;
       }),
@@ -60,7 +59,7 @@ export default function ShoppingListsPage() {
   };
 
   useEffect(() => {
-    const data = getLocalStorage(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
     if (data === undefined) return;
     setShoppingLists(data);
   }, []);
@@ -70,7 +69,7 @@ export default function ShoppingListsPage() {
       isFirstRender.current = false;
       return;
     }
-    setLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
+    setLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST, shoppingLists);
   }, [shoppingLists]);
 
   return (
@@ -78,13 +77,8 @@ export default function ShoppingListsPage() {
       <div className="py-10">
         <div className="px-4 text-[13px] text-neutral-400">あなたの買い物リスト</div>
         <div className="mt-2 flex flex-col px-2">
-          {shoppingLists.map((shoppingList) => (
-            <ShoppingList
-              key={shoppingList.id}
-              data={shoppingList}
-              onEdit={handleEdit}
-              onDelete={handleDeleteItem}
-            />
+          {shoppingLists.map(({ id, name }) => (
+            <List key={id} data={{ id, name }} onEdit={handleEdit} onDelete={handleDeleteItem} />
           ))}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -137,21 +131,21 @@ export default function ShoppingListsPage() {
   );
 }
 
-function ShoppingList({
+function List({
   data,
   onEdit,
   onDelete,
 }: {
-  data: { id: string; title: string };
-  onEdit: (list: { id: string; title: string }) => void;
+  data: { id: string; name: string };
+  onEdit: (list: { id: string; name: string }) => void;
   onDelete: (id: string) => void;
 }) {
-  const { id, title } = data;
-  const [value, setValue] = useState(title);
+  const { id, name } = data;
+  const [value, setValue] = useState(name);
   const [open, setOpen] = useState(false);
 
   const handleEdit = () => {
-    onEdit({ id, title: value });
+    onEdit({ id, name: value });
   };
   const handleDelete = () => onDelete(id);
 
@@ -160,7 +154,7 @@ function ShoppingList({
       <div className="flex items-center justify-between gap-x-2 rounded p-2 hover:bg-neutral-100">
         <Link href={`/shopping-list/${id}`} className="flex flex-1 items-center gap-2">
           <StickyNote className="text-neutral-400" />
-          <div>{title}</div>
+          <div>{name}</div>
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger className="cursor-pointer rounded hover:bg-neutral-200">

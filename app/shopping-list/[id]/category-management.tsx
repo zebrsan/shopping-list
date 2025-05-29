@@ -21,8 +21,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { useParams } from 'next/navigation';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
+import { ShoppingCategory } from '@/types/shoppingList';
 
 export function CategoryManagement({
   list,
@@ -33,13 +33,12 @@ export function CategoryManagement({
 }: {
   list: { id: string; name: string }[];
   onChageMode: () => void;
-  onAdd: (category: ShoppingCategoryData) => void;
+  onAdd: (category: ShoppingCategory) => void;
   onEdit: (item: ShoppingCategoryData) => void;
   onDelete: (id: string) => void;
 }) {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
-  const params = useParams();
 
   const handleAddItem = () => {
     setValue('');
@@ -47,20 +46,8 @@ export function CategoryManagement({
     setOpen(false);
   };
 
-  const addShoppingCategory = async () => {
-    const res = await fetch('/api/shopping-category', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: value,
-        shopping_list_id: params.id,
-        sort_order: list.length + 1,
-      }),
-    });
-    const data = await res.json();
-    onAdd(data);
+  const addShoppingCategory = () => {
+    onAdd({ id: crypto.randomUUID(), name: value, order: list.length + 1 });
   };
 
   // TODO: カテゴリ名の並び順制御（チェックリスト画面にもその並び順でカテゴリが並ぶようにする）
