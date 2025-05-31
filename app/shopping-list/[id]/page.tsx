@@ -57,7 +57,7 @@ export default function ShoppingListPage() {
   // アイテム操作
   const handleAddItem = () => {
     setValue('');
-    setCategoryValue('');
+    setCategoryValue(undefined);
     const newList = [
       ...list,
       { id: crypto.randomUUID(), name: value, categoryId: categoryValue ?? null, checked: false },
@@ -329,11 +329,7 @@ export default function ShoppingListPage() {
               <div>
                 <div>カテゴリ</div>
                 <div>
-                  <Select
-                    value={categoryValue}
-                    onValueChange={setCategoryValue}
-                    disabled={categories.length === 0}
-                  >
+                  <Select onValueChange={setCategoryValue} disabled={categories.length === 0}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="カテゴリを選択" />
                     </SelectTrigger>
