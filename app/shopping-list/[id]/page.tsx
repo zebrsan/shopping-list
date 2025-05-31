@@ -238,8 +238,8 @@ export default function ShoppingListPage() {
     const categoryOrderMap = new Map(_categories.map((category, index) => [category.id, index]));
 
     return [...items].sort((a, b) => {
-      const aOrder = categoryOrderMap.get(a.categoryId ?? '') ?? -1;
-      const bOrder = categoryOrderMap.get(b.categoryId ?? '') ?? -1;
+      const aOrder = categoryOrderMap.get(a.categoryId ?? '') ?? Infinity;
+      const bOrder = categoryOrderMap.get(b.categoryId ?? '') ?? Infinity;
       return aOrder - bOrder;
     });
   };
@@ -299,11 +299,11 @@ export default function ShoppingListPage() {
           <div className="mb-16 p-2">
             {list.map((item, index) => (
               <div key={index}>
-                {item.categoryId !== null && list[index - 1]?.categoryId !== item.categoryId && (
+                {list[index - 1]?.categoryId !== item.categoryId && (
                   <div className="relative my-5 h-[1px] w-full bg-neutral-200">
-                    <div className="absolute top-1/2 left-2 flex h-4 w-full -translate-y-1/2 items-center justify-start">
+                    <div className="absolute top-1/2 left-0 flex h-4 w-full -translate-y-1/2 items-center justify-start">
                       <div className="rounded bg-white px-2 py-0.5 text-[13px] text-neutral-500">
-                        {categories.find((c) => c.id === item.categoryId)?.name ?? 'カテゴリなし'}
+                        {categories.find((c) => c.id === item.categoryId)?.name ?? 'その他'}
                       </div>
                     </div>
                   </div>
