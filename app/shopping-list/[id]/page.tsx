@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/select';
 import { CategoryManagement } from './category-management';
 import { useParams } from 'next/navigation';
-import { deleteShoppingCategory, updateShoppingCategory } from '@/lib/apiHandle';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
 import { ShoppingCategory, ShoppingItem, ShoppingList } from '@/types/shoppingList';
@@ -87,7 +86,6 @@ export default function ShoppingListPage() {
       }
       return l;
     });
-    // await updateShoppingItem(item.id, item.name, item.checked, item.category_id);
     setList(newList);
     const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
@@ -104,9 +102,8 @@ export default function ShoppingListPage() {
     setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = (id: string) => {
     const updatedList = list.filter((_) => _.id !== id);
-    // await deleteShoppingItem(id);
     setList(updatedList);
     const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
@@ -123,7 +120,7 @@ export default function ShoppingListPage() {
     setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleSelectCategory = async (categoryId: string, id: string) => {
+  const handleSelectCategory = (categoryId: string, id: string) => {
     const newList = list.map((l) => {
       if (l.id === id) {
         return { ...l, categoryId };
@@ -168,39 +165,88 @@ export default function ShoppingListPage() {
     setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleDeleteCategory = async (shoppingCategoryId: string) => {
-    const updatedCategories = categories.filter((category) => category.id !== shoppingCategoryId);
-    await deleteShoppingCategory(shoppingCategoryId);
-    setCategories(updatedCategories);
+  const handleUpdateCategories = (items: ShoppingCategory[]) => {
+    setCategories(items);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          categories: items,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleEditCategory = async (newItem: ShoppingCategoryData) => {
-    await updateShoppingCategory(newItem.id, newItem.name, newItem.sort_order);
-    setCategories(
-      categories.map((category) => {
-        if (category.id === newItem.id) return { ...category, name: newItem.name };
-        return category;
-      }),
-    );
+  const handleDeleteCategory = (shoppingCategoryId: string) => {
+    const updatedItems = list.map((item) => {
+      if (item.categoryId === shoppingCategoryId) {
+        return { ...item, categoryId: null };
+      } else {
+        return item;
+      }
+    });
+    const updatedCategories = categories.filter((category) => category.id !== shoppingCategoryId);
+    const sorted = sortItemsByCategory(updatedItems, updatedCategories);
+    setList(sorted);
+    setCategories(updatedCategories);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          items: sorted,
+          categories: updatedCategories,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
+  };
+
+  const handleEditCategory = (newItem: ShoppingCategoryData) => {
+    const newCategories = categories.map((category) => {
+      if (category.id === newItem.id) return { ...category, name: newItem.name };
+      return category;
+    });
+    setCategories(newCategories);
+    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          categories: newCategories,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
   const sortItemsByCategory = (
     items: ShoppingItem[],
     _categories: ShoppingCategory[],
   ): ShoppingItem[] => {
-    console.log(items, _categories);
-    const categoryMap = new Map(_categories.map((c) => [c.id, c]));
+    const categoryOrderMap = new Map(_categories.map((category, index) => [category.id, index]));
 
     return [...items].sort((a, b) => {
-      const aCat = categoryMap.get(a.categoryId ?? '');
-      const bCat = categoryMap.get(b.categoryId ?? '');
-
-      // カテゴリがない場合の処理
-      const aOrder = aCat ? aCat.order : -Infinity;
-      const bOrder = bCat ? bCat.order : -Infinity;
-
+      const aOrder = categoryOrderMap.get(a.categoryId ?? '') ?? -1;
+      const bOrder = categoryOrderMap.get(b.categoryId ?? '') ?? -1;
       return aOrder - bOrder;
     });
+  };
+
+  const sortItems = () => {
+    const sorted = sortItemsByCategory(list, categories);
+    setList(sorted);
   };
 
   // fetch shoppinglist data from localstorage
@@ -211,8 +257,8 @@ export default function ShoppingListPage() {
       const shoppingList = data.find((d) => d.id === params.id);
       if (!shoppingList) return;
       setTitle(shoppingList.name);
-      setList(shoppingList.items);
       setCategories(shoppingList.categories);
+      setList(() => sortItemsByCategory(shoppingList.items, shoppingList.categories));
     };
     loadShoppingList();
   }, [params.id]);
@@ -253,7 +299,7 @@ export default function ShoppingListPage() {
           <div className="mb-16 p-2">
             {list.map((item, index) => (
               <div key={index}>
-                {list.length > 1 && list[index - 1]?.categoryId !== item.categoryId && (
+                {item.categoryId !== null && list[index - 1]?.categoryId !== item.categoryId && (
                   <div className="relative my-5 h-[1px] w-full bg-neutral-200">
                     <div className="absolute top-1/2 left-2 flex h-4 w-full -translate-y-1/2 items-center justify-start">
                       <div className="rounded bg-white px-2 py-0.5 text-[13px] text-neutral-500">
@@ -337,6 +383,8 @@ export default function ShoppingListPage() {
         onAdd={handleAddCategory}
         onEdit={handleEditCategory}
         onDelete={handleDeleteCategory}
+        onUpdate={handleUpdateCategories}
+        onSort={sortItems}
       />
     );
   }

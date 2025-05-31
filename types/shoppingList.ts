@@ -20,5 +20,4 @@ export type ShoppingItem = {
 export type ShoppingCategory = {
   id: string;
   name: string;
-  order: number;
 };
