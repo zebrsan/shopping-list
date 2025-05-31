@@ -161,18 +161,11 @@ function List({
             <Ellipsis />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="text-md py-2"
-              onClick={() => toast('共有リンクをコピーしました🥳')}
-            >
+            <DropdownMenuItem onClick={() => toast('共有リンクをコピーしました🥳')}>
               共有リンクをコピー
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-md py-2" onClick={() => setOpen(true)}>
-              リスト名を編集
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-md py-2" onClick={handleDelete}>
-              リストを削除
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setOpen(true)}>リスト名を編集</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDelete}>リストを削除</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
