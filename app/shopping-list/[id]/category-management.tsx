@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 // icons
 import { ChevronLeft, Ellipsis, GripVertical, Plus } from 'lucide-react';
 // components
@@ -23,6 +23,23 @@ import {
 import { Input } from '@/components/ui/input';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
 import { ShoppingCategory } from '@/types/shoppingList';
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export function CategoryManagement({
   list,
@@ -30,12 +47,16 @@ export function CategoryManagement({
   onAdd,
   onEdit,
   onDelete,
+  onUpdate,
+  onSort,
 }: {
   list: { id: string; name: string }[];
   onChageMode: () => void;
   onAdd: (category: ShoppingCategory) => void;
   onEdit: (item: ShoppingCategoryData) => void;
   onDelete: (id: string) => void;
+  onUpdate: (items: ShoppingCategory[]) => void;
+  onSort: () => void;
 }) {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
@@ -47,10 +68,31 @@ export function CategoryManagement({
   };
 
   const addShoppingCategory = () => {
-    onAdd({ id: crypto.randomUUID(), name: value, order: list.length + 1 });
+    onAdd({ id: crypto.randomUUID(), name: value });
   };
 
-  // TODO: カテゴリ名の並び順制御（チェックリスト画面にもその並び順でカテゴリが並ぶようにする）
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = list.findIndex((item) => item.id === active.id);
+      const newIndex = list.findIndex((item) => item.id === over.id);
+
+      const newArray = arrayMove(list, oldIndex, newIndex);
+      onUpdate(newArray);
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  useEffect(() => {
+    onSort();
+  }, [list]);
 
   return (
     <>
@@ -63,14 +105,20 @@ export function CategoryManagement({
         </div>
       </div>
       <div className="px-2">
-        {list.map((item) => (
-          <CategoryItem
-            key={item.id}
-            item={item}
-            onEdit={onEdit}
-            onDelete={() => onDelete(item.id)}
-          />
-        ))}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={list} strategy={verticalListSortingStrategy}>
+            {list.map((item) => (
+              <div key={item.id}>
+                <CategoryItem
+                  key={item.id}
+                  item={item}
+                  onEdit={onEdit}
+                  onDelete={() => onDelete(item.id)}
+                />
+              </div>
+            ))}
+          </SortableContext>
+        </DndContext>
       </div>
       <div className="px-2">
         <Dialog open={open} onOpenChange={setOpen}>
@@ -134,16 +182,27 @@ function CategoryItem({
   const [value, setValue] = useState(name);
   const [isEdit, setIsEdit] = useState(false);
 
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: item.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const handleEdit = () => {
     setIsEdit(false);
     onEdit({ id, name: value, sort_order: 1 });
   };
 
   return (
-    <>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <div className="flex items-center justify-between gap-x-2 p-2">
         <div className="flex items-center gap-x-2">
-          <GripVertical />
+          <div className="bg-neutral-100 p-1">
+            <GripVertical {...listeners} size={18} className="cursor-grab text-neutral-400" />
+          </div>
           <div className="text-md">{name}</div>
         </div>
         <DropdownMenu>
@@ -189,6 +248,6 @@ function CategoryItem({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
