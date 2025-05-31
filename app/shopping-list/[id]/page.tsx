@@ -433,7 +433,7 @@ function CheckListItem({
           <DropdownMenuTrigger>
             <Ellipsis />
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
+          <DropdownMenuContent align="end">
             <DropdownMenuGroup>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
@@ -459,7 +459,9 @@ function CheckListItem({
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuItem onClick={() => setOpenEditItemDialog(true)}>編集</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDeleteItem(id)}>削除</DropdownMenuItem>
+              <DropdownMenuItem className="text-rose-600" onClick={() => handleDeleteItem(id)}>
+                削除
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
