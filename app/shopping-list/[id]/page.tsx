@@ -120,12 +120,13 @@ export default function ShoppingListPage() {
     setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleSelectCategory = (categoryId: string, id: string) => {
+  const handleSelectCategory = (categoryId: string | null, id: string) => {
     const newList = list.map((l) => {
       if (l.id === id) {
         return { ...l, categoryId };
+      } else {
+        return l;
       }
-      return l;
     });
 
     const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
@@ -396,7 +397,7 @@ function CheckListItem({
   data: ShoppingItem;
   categories: { id: string; name: string }[];
   handleDeleteItem: (id: string) => void;
-  handleSelectCategory: (categoryId: string, id: string) => void;
+  handleSelectCategory: (categoryId: string | null, id: string) => void;
   onEdit: (data: ShoppingItem) => void;
 }) {
   const { id, name, checked, categoryId } = data;
@@ -455,6 +456,13 @@ function CheckListItem({
                         {category.name}
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        handleSelectCategory(null, id);
+                      }}
+                    >
+                      その他
+                    </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
