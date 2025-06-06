@@ -22,6 +22,8 @@ import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
 import { ShoppingList } from '@/types/shoppingList';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 export default function ShoppingListsPage() {
   const [open, setOpen] = useState(false); // ショッピングリストの追加ダイアログ表示制御
@@ -31,9 +33,7 @@ export default function ShoppingListsPage() {
   const isFirstRender = useRef(true);
 
   // 買い物リスト追加処理
-  const handleAddItem = async () => {
-    if (value.trim() === '') return;
-
+  const handleAddItem = () => {
     const list = { id: crypto.randomUUID(), name: value, items: [], categories: [] };
 
     setShoppingLists([...shoppingLists, list]);
@@ -75,17 +75,14 @@ export default function ShoppingListsPage() {
   return (
     <>
       <div className="py-10">
-        <div className="px-4 text-[13px] text-neutral-400">あなたの買い物リスト</div>
+        <div className="px-4 text-[13px] text-neutral-400">買い物リスト一覧</div>
         <div className="mt-2 flex flex-col px-2">
           {shoppingLists.map(({ id, name }) => (
             <List key={id} data={{ id, name }} onEdit={handleEdit} onDelete={handleDeleteItem} />
           ))}
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <div
-                className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-400 hover:bg-teal-50"
-                onClick={handleAddItem}
-              >
+              <div className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-400 hover:bg-teal-50">
                 <Plus />
                 <div className="font-bold">リストを追加</div>
               </div>
@@ -95,33 +92,29 @@ export default function ShoppingListsPage() {
                 <DialogTitle>リストを追加</DialogTitle>
               </DialogHeader>
               <div>
-                <div>
-                  <div className="mb-1 text-sm text-neutral-400">リスト名</div>
-                  <div>
-                    <Input
-                      value={value}
-                      placeholder="リスト名を入力"
-                      onChange={(e) => setValue(e.target.value)}
-                    />
-                  </div>
+                <div className="grid w-full max-w-sm items-center gap-2">
+                  <Label htmlFor="name" className="text-neutral-600">
+                    リスト名
+                  </Label>
+                  <Input
+                    id="name"
+                    value={value}
+                    placeholder="アイテム名を入力"
+                    onChange={(e) => setValue(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
-                <button
-                  className="text-md h-10 w-full rounded border border-neutral-200 bg-white text-black"
-                  onClick={() => setOpen(false)}
-                >
-                  キャンセル
-                </button>
-                <button
-                  className="text-md h-10 w-full rounded bg-black font-bold text-white"
+                <Button
+                  type="button"
+                  disabled={value.trim() === ''}
                   onClick={() => {
                     setOpen(false);
                     handleAddItem();
                   }}
                 >
                   追加
-                </button>
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -141,13 +134,17 @@ function List({
   onDelete: (id: string) => void;
 }) {
   const { id, name } = data;
-  const [value, setValue] = useState(name);
+  const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
 
   const handleEdit = () => {
     onEdit({ id, name: value });
   };
   const handleDelete = () => onDelete(id);
+
+  useEffect(() => {
+    setValue(name);
+  }, [open, name]);
 
   return (
     <>
@@ -175,33 +172,30 @@ function List({
             <DialogTitle>リスト名を編集</DialogTitle>
           </DialogHeader>
           <div>
-            <div>
-              <div className="mb-1 text-sm text-neutral-400">リスト名</div>
-              <div>
-                <Input
-                  value={value}
-                  placeholder="アイテム名を入力"
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
+            <div className="grid w-full max-w-sm items-center gap-2">
+              <Label htmlFor="name" className="text-neutral-600">
+                リスト名
+              </Label>
+              <Input
+                id="name"
+                value={value}
+                placeholder="アイテム名を入力"
+                onChange={(e) => setValue(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <button
-              className="text-md h-10 w-full rounded border border-neutral-200 bg-white text-black"
-              onClick={() => setOpen(false)}
-            >
-              キャンセル
-            </button>
-            <button
-              className="text-md h-10 w-full rounded bg-black font-bold text-white"
+            <Button
+              type="button"
+              variant="default"
+              disabled={value.trim() === ''}
               onClick={() => {
                 setOpen(false);
                 handleEdit();
               }}
             >
               変更を保存
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

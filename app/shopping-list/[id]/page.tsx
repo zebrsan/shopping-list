@@ -31,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { CategoryManagement } from './category-management';
 import { useParams } from 'next/navigation';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
@@ -120,12 +123,13 @@ export default function ShoppingListPage() {
     setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
   };
 
-  const handleSelectCategory = (categoryId: string, id: string) => {
+  const handleSelectCategory = (categoryId: string | null, id: string) => {
     const newList = list.map((l) => {
       if (l.id === id) {
         return { ...l, categoryId };
+      } else {
+        return l;
       }
-      return l;
     });
 
     const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
@@ -267,7 +271,7 @@ export default function ShoppingListPage() {
     return (
       <>
         {/* header */}
-        <div className="flex h-14 items-center justify-between bg-white px-4">
+        <div className="sticky top-0 z-20 flex h-14 items-center justify-between bg-white px-4">
           <div className="flex items-center gap-x-2">
             <Link href="/shopping-list" className="text-sm underline">
               <ChevronLeft />
@@ -325,45 +329,43 @@ export default function ShoppingListPage() {
               <DialogTitle>チェックアイテムを追加</DialogTitle>
               <DialogDescription />
             </DialogHeader>
-            <div>
-              <div>
-                <div>カテゴリ</div>
-                <div>
-                  <Select onValueChange={setCategoryValue} disabled={categories.length === 0}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="カテゴリを選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-4">
+              <div className="grid w-full max-w-sm items-center gap-2">
+                <Label htmlFor="name">カテゴリ</Label>
+                <Select onValueChange={setCategoryValue} disabled={categories.length === 0}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="カテゴリを選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <div>アイテム名</div>
-                <div>
-                  <input
-                    value={value}
-                    placeholder="アイテム名を入力"
-                    onChange={(e) => setValue(e.target.value)}
-                  />
-                </div>
+              <div className="grid w-full max-w-sm items-center gap-2">
+                <Label htmlFor="name">アイテム名</Label>
+                <Input
+                  id="name"
+                  value={value}
+                  placeholder="アイテム名を入力"
+                  onChange={(e) => setValue(e.target.value)}
+                />
               </div>
             </div>
             <DialogFooter>
-              <button
-                className="text-md h-10 w-full rounded bg-black font-bold text-white"
+              <Button
+                variant="default"
+                disabled={value.trim() === ''}
                 onClick={() => {
                   setOpenAddItemDialog(false);
                   handleAddItem();
                 }}
               >
-                チェックリストに追加
-              </button>
+                追加
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -396,14 +398,18 @@ function CheckListItem({
   data: ShoppingItem;
   categories: { id: string; name: string }[];
   handleDeleteItem: (id: string) => void;
-  handleSelectCategory: (categoryId: string, id: string) => void;
+  handleSelectCategory: (categoryId: string | null, id: string) => void;
   onEdit: (data: ShoppingItem) => void;
 }) {
-  const { id, name, checked, categoryId } = data;
+  const { id, name, checked } = data;
   const [openEditItemDialog, setOpenEditItemDialog] = useState(false);
-  const [value, setValue] = useState(name);
+  const [value, setValue] = useState('');
 
-  const categoryName = categories.find((c) => c.id === categoryId);
+  useEffect(() => {
+    if (openEditItemDialog) {
+      setValue(name);
+    }
+  }, [openEditItemDialog, name]);
 
   return (
     <>
@@ -425,9 +431,6 @@ function CheckListItem({
             {checked && <Check size={16} color="white" />}
           </label>
           <div className="text-md">{name}</div>
-          <div className="rounded bg-teal-100 px-1 py-0.5 text-xs text-teal-600">
-            {categoryName?.name ?? 'カテゴリなし'}
-          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger>
@@ -455,6 +458,13 @@ function CheckListItem({
                         {category.name}
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        handleSelectCategory(null, id);
+                      }}
+                    >
+                      その他
+                    </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
@@ -473,27 +483,27 @@ function CheckListItem({
             <DialogDescription />
           </DialogHeader>
           <div>
-            <div>
-              <div>アイテム名</div>
-              <div>
-                <input
-                  value={value}
-                  placeholder="アイテム名を入力"
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
+            <div className="grid w-full max-w-sm items-center gap-2">
+              <Label htmlFor="name">アイテム名</Label>
+              <Input
+                id="name"
+                value={value}
+                placeholder="アイテム名を入力"
+                onChange={(e) => setValue(e.target.value)}
+              />
             </div>
           </div>
           <DialogFooter>
-            <button
-              className="text-md h-10 w-full rounded bg-black font-bold text-white"
+            <Button
+              type="button"
+              disabled={value.trim() === ''}
               onClick={() => {
                 setOpenEditItemDialog(false);
                 onEdit({ ...data, name: value });
               }}
             >
-              更新
-            </button>
+              変更を保存
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
