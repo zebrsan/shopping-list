@@ -268,7 +268,7 @@ export default function ShoppingListPage() {
     return (
       <>
         {/* header */}
-        <div className="flex h-14 items-center justify-between bg-white px-4">
+        <div className="sticky top-0 z-20 flex h-14 items-center justify-between bg-white px-4">
           <div className="flex items-center gap-x-2">
             <Link href="/shopping-list" className="text-sm underline">
               <ChevronLeft />
