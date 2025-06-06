@@ -402,7 +402,13 @@ function CheckListItem({
 }) {
   const { id, name, checked, categoryId } = data;
   const [openEditItemDialog, setOpenEditItemDialog] = useState(false);
-  const [value, setValue] = useState(name);
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    if (openEditItemDialog) {
+      setValue(name);
+    }
+  }, [openEditItemDialog, name]);
 
   const categoryName = categories.find((c) => c.id === categoryId);
 
