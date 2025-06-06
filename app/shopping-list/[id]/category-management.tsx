@@ -6,7 +6,6 @@ import { ChevronLeft, Ellipsis, GripVertical, Plus } from 'lucide-react';
 // components
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -40,6 +39,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export function CategoryManagement({
   list,
@@ -125,41 +126,34 @@ export function CategoryManagement({
           <DialogTrigger asChild>
             <div className="flex cursor-pointer items-center gap-x-2 rounded p-2 text-teal-400 hover:bg-teal-50">
               <Plus />
-              <div className="font-bold">リストを追加</div>
+              <div className="font-bold">カテゴリを追加</div>
             </div>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>リストを追加</DialogTitle>
+              <DialogTitle>カテゴリを追加</DialogTitle>
               <DialogDescription />
             </DialogHeader>
-            <div>
-              <div>
-                <div className="mb-1 text-sm text-neutral-400">リスト名</div>
-                <div>
-                  <Input
-                    value={value}
-                    placeholder="リスト名を入力"
-                    onChange={(e) => setValue(e.target.value)}
-                  />
-                </div>
-              </div>
+            <div className="grid w-full max-w-sm items-center gap-2">
+              <Label htmlFor="name">カテゴリ名</Label>
+              <Input
+                id="name"
+                value={value}
+                placeholder="カテゴリ名を入力"
+                onChange={(e) => setValue(e.target.value)}
+              />
             </div>
             <DialogFooter>
-              <DialogClose asChild>
-                <button className="text-md h-10 w-full rounded border border-neutral-200 bg-white text-black">
-                  キャンセル
-                </button>
-              </DialogClose>
-              <button
-                className="text-md h-10 w-full rounded bg-black font-bold text-white"
+              <Button
+                type="button"
+                disabled={value.trim() === ''}
                 onClick={() => {
                   setOpen(false);
                   handleAddItem();
                 }}
               >
                 追加
-              </button>
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -218,33 +212,22 @@ function CategoryItem({
       <Dialog open={isEdit} onOpenChange={setIsEdit}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>リスト名を編集</DialogTitle>
+            <DialogTitle>カテゴリ名を編集</DialogTitle>
             <DialogDescription />
           </DialogHeader>
-          <div>
-            <div>
-              <div className="mb-1 text-sm text-neutral-400">リスト名</div>
-              <div>
-                <Input
-                  value={value}
-                  placeholder="アイテム名を入力"
-                  onChange={(e) => setValue(e.target.value)}
-                />
-              </div>
-            </div>
+          <div className="grid w-full max-w-sm items-center gap-2">
+            <Label htmlFor="name">カテゴリ名</Label>
+            <Input
+              id="name"
+              value={value}
+              placeholder="カテゴリ名を入力"
+              onChange={(e) => setValue(e.target.value)}
+            />
           </div>
           <DialogFooter>
-            <DialogClose asChild>
-              <button className="text-md h-10 w-full rounded border border-neutral-200 bg-white text-black">
-                キャンセル
-              </button>
-            </DialogClose>
-            <button
-              className="text-md h-10 w-full rounded bg-black font-bold text-white"
-              onClick={handleEdit}
-            >
+            <Button type="button" disabled={value.trim() === ''} onClick={handleEdit}>
               変更を保存
-            </button>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
