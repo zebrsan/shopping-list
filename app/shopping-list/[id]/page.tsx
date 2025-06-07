@@ -38,7 +38,7 @@ import { CategoryManagement } from './category-management';
 import { useParams } from 'next/navigation';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
-import { ShoppingCategory, ShoppingItem, ShoppingList } from '@/types/shoppingList';
+import { ShoppingCategory, ShoppingItem, ShoppingListData } from '@/types/shoppingList';
 
 const modes = {
   CATEGORY_MANAGEMENT: 'category_management',
@@ -65,7 +65,7 @@ export default function ShoppingListPage() {
       ...list,
       { id: crypto.randomUUID(), name: value, categoryId: categoryValue ?? null, checked: false },
     ];
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -90,7 +90,7 @@ export default function ShoppingListPage() {
       return l;
     });
     setList(newList);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -108,7 +108,7 @@ export default function ShoppingListPage() {
   const handleDeleteItem = (id: string) => {
     const updatedList = list.filter((_) => _.id !== id);
     setList(updatedList);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -132,7 +132,7 @@ export default function ShoppingListPage() {
       }
     });
 
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -154,7 +154,7 @@ export default function ShoppingListPage() {
   const handleAddCategory = (newCategory: ShoppingCategory) => {
     const newCategories = [...categories, newCategory];
     setCategories(newCategories);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -171,7 +171,7 @@ export default function ShoppingListPage() {
 
   const handleUpdateCategories = (items: ShoppingCategory[]) => {
     setCategories(items);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -198,7 +198,7 @@ export default function ShoppingListPage() {
     const sorted = sortItemsByCategory(updatedItems, updatedCategories);
     setList(sorted);
     setCategories(updatedCategories);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -220,7 +220,7 @@ export default function ShoppingListPage() {
       return category;
     });
     setCategories(newCategories);
-    const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
     if (!data) return;
     const updateList = data.map((l) => {
       if (l.id === params.id) {
@@ -256,7 +256,7 @@ export default function ShoppingListPage() {
   // fetch shoppinglist data from localstorage
   useEffect(() => {
     const loadShoppingList = () => {
-      const data = getLocalStorage<ShoppingList[]>(localStorageKey.SHOPPING_LIST);
+      const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
       if (!data) return;
       const shoppingList = data.find((d) => d.id === params.id);
       if (!shoppingList) return;
