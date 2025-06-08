@@ -1,13 +1,9 @@
 export type ShoppingListData = {
   id: string;
-  title: string;
-};
-
-export type ShoppingList = {
-  id: string;
   name: string;
   items: ShoppingItem[] | [];
   categories: ShoppingCategory[] | [];
+  shareId: string | null;
 };
 
 export type ShoppingItem = {
