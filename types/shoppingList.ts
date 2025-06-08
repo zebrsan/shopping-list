@@ -3,6 +3,7 @@ export type ShoppingListData = {
   name: string;
   items: ShoppingItem[] | [];
   categories: ShoppingCategory[] | [];
+  shareId: string | null;
 };
 
 export type ShoppingItem = {

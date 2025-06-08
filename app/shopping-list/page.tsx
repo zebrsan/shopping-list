@@ -22,7 +22,13 @@ export default function ShoppingListsPage() {
   };
 
   const handleAddShoppingList = (name: string) => {
-    const newList = { id: crypto.randomUUID(), name: name, items: [], categories: [] };
+    const newList = {
+      id: crypto.randomUUID(),
+      name: name,
+      items: [],
+      categories: [],
+      shareId: null,
+    };
     updateShoppingLists([...shoppingLists, newList]);
   };
 
