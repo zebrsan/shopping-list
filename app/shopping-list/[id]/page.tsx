@@ -39,6 +39,7 @@ import { useParams } from 'next/navigation';
 import { ShoppingCategoryData } from '@/types/shoppingCategory';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
 import { ShoppingCategory, ShoppingItem, ShoppingListData } from '@/types/shoppingList';
+import { ShareDialog } from './share-dialog';
 
 const modes = {
   CATEGORY_MANAGEMENT: 'category_management',
@@ -47,12 +48,64 @@ const modes = {
 
 export default function ShoppingListPage() {
   const params = useParams();
+  const [shoppingList, setShoppingList] = useState<ShoppingListData>();
   const [list, setList] = useState<ShoppingItem[]>([]);
   const [categories, setCategories] = useState<ShoppingCategory[]>([]); // shopping_category
   const [categoryValue, setCategoryValue] = useState<string | undefined>(undefined);
   const [value, setValue] = useState('');
   const [mode, setMode] = useState<(typeof modes)[keyof typeof modes]>(modes.CHECK_LIST);
   const [title, setTitle] = useState('');
+  const [shareId, setShareId] = useState<string | null>(null); // shareId
+  const [shareDialog, setShareDialog] = useState(false);
+
+  // TODO: 共有機能を追加
+  const shareShoppingList = async (shareIda: string) => {
+    if (!shoppingList) {
+      throw new Error('Shopping list is undefined');
+    }
+    const { id, name, items, categories } = shoppingList;
+    try {
+      await fetch('/api/shopping-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, name, items, categories, shareId: shareIda }),
+      });
+    } catch (e) {
+      console.error('Failed to add shopping list:', e);
+      throw new Error('Failed to add shopping list');
+    }
+  };
+
+  const handleShare = async () => {
+    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
+    if (!data) return;
+    const target = data.find((d) => {
+      if (d.id === params.id) return d;
+    });
+    // shareIdがあればPOSTしない
+    if (target?.shareId) {
+      return;
+    }
+
+    const id = crypto.randomUUID();
+    setShareId(id);
+
+    const updateList = data.map((l) => {
+      if (l.id === params.id) {
+        return {
+          ...l,
+          shareId: id,
+        };
+      } else {
+        return l;
+      }
+    });
+    setLocalStorage(localStorageKey.SHOPPING_LIST, updateList);
+
+    shareShoppingList(id);
+  };
 
   // チェックリスト追加ダイアログ
   const [openAddItemDialog, setOpenAddItemDialog] = useState(false);
@@ -260,6 +313,8 @@ export default function ShoppingListPage() {
       if (!data) return;
       const shoppingList = data.find((d) => d.id === params.id);
       if (!shoppingList) return;
+      setShoppingList(shoppingList);
+      setShareId(shoppingList.shareId);
       setTitle(shoppingList.name);
       setCategories(shoppingList.categories);
       setList(() => sortItemsByCategory(shoppingList.items, shoppingList.categories));
@@ -291,7 +346,9 @@ export default function ShoppingListPage() {
                   カテゴリを管理
                 </DropdownMenuItem>
                 <DropdownMenuItem>タイトルを編集</DropdownMenuItem>
-                <DropdownMenuItem>シートを共有</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShareDialog(true)}>
+                  シートを共有
+                </DropdownMenuItem>
                 <DropdownMenuItem>シートを削除</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -369,6 +426,12 @@ export default function ShoppingListPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <ShareDialog
+          open={shareDialog}
+          shareId={shareId}
+          onOpenChange={setShareDialog}
+          onSubmit={handleShare}
+        />
       </>
     );
   }

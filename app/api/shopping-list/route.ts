@@ -3,10 +3,14 @@ import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
-  const query = searchParams.get('id');
+  const query = searchParams.get('shareId');
 
   if (query) {
-    const { data } = await supabase.from('shopping_list').select('*').eq('id', query).single();
+    const { data } = await supabase
+      .from('shopping_list')
+      .select('*')
+      .eq('share_id', query)
+      .single();
     return Response.json(data);
   }
 
@@ -15,8 +19,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: Request) {
-  const { title } = await req.json();
-  const { data } = await supabase.from('shopping_list').insert({ title }).select().single();
+  const { name, items, categories, shareId } = await req.json();
+  const { data } = await supabase
+    .from('shopping_list')
+    .insert({ share_id: shareId, list: { name, items, categories } })
+    .select()
+    .single();
 
   return Response.json(data);
 }
