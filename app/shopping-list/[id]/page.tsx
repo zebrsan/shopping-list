@@ -48,7 +48,6 @@ const modes = {
 
 export default function ShoppingListPage() {
   const params = useParams();
-  const [shoppingList, setShoppingList] = useState<ShoppingListData>();
   const [list, setList] = useState<ShoppingItem[]>([]);
   const [categories, setCategories] = useState<ShoppingCategory[]>([]); // shopping_category
   const [categoryValue, setCategoryValue] = useState<string | undefined>(undefined);
@@ -59,18 +58,20 @@ export default function ShoppingListPage() {
   const [shareDialog, setShareDialog] = useState(false);
 
   // TODO: 共有機能を追加
-  const shareShoppingList = async (shareIda: string) => {
-    if (!shoppingList) {
-      throw new Error('Shopping list is undefined');
-    }
-    const { id, name, items, categories } = shoppingList;
+  const shareShoppingList = async (shareId: string) => {
     try {
       await fetch('/api/shopping-list', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id, name, items, categories, shareId: shareIda }),
+        body: JSON.stringify({
+          id: params.id,
+          name: title,
+          items: list,
+          categories: categories,
+          shareId: shareId,
+        }),
       });
     } catch (e) {
       console.error('Failed to add shopping list:', e);
@@ -91,7 +92,6 @@ export default function ShoppingListPage() {
 
     const id = crypto.randomUUID();
     setShareId(id);
-
     const updateList = data.map((l) => {
       if (l.id === params.id) {
         return {
@@ -313,7 +313,6 @@ export default function ShoppingListPage() {
       if (!data) return;
       const shoppingList = data.find((d) => d.id === params.id);
       if (!shoppingList) return;
-      setShoppingList(shoppingList);
       setShareId(shoppingList.shareId);
       setTitle(shoppingList.name);
       setCategories(shoppingList.categories);

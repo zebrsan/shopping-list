@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   const { name, items, categories, shareId } = await req.json();
   const { data } = await supabase
     .from('shopping_list')
-    .insert({ share_id: shareId, list: { name, items, categories } })
+    .insert({ share_id: shareId, list: { name: name, items: items, categories: categories } })
     .select()
     .single();
 
