@@ -20,8 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ShoppingCategoryData } from '@/types/shoppingCategory';
-import { ShoppingCategory } from '@/types/shoppingList';
+import { ShoppingCategoryModel } from '@/types/shopping-list';
 import {
   closestCenter,
   DndContext,
@@ -53,10 +52,10 @@ export function CategoryManagement({
 }: {
   list: { id: string; name: string }[];
   onChageMode: () => void;
-  onAdd: (category: ShoppingCategory) => void;
-  onEdit: (item: ShoppingCategoryData) => void;
+  onAdd: (category: ShoppingCategoryModel) => void;
+  onEdit: (item: ShoppingCategoryModel) => void;
   onDelete: (id: string) => void;
-  onUpdate: (items: ShoppingCategory[]) => void;
+  onUpdate: (items: ShoppingCategoryModel[]) => void;
   onSort: () => void;
 }) {
   const [value, setValue] = useState('');
@@ -168,7 +167,7 @@ function CategoryItem({
   onDelete,
 }: {
   item: { id: string; name: string };
-  onEdit: (item: ShoppingCategoryData) => void;
+  onEdit: (item: ShoppingCategoryModel) => void;
   onDelete: () => void;
 }) {
   const { id, name } = item;
@@ -187,7 +186,7 @@ function CategoryItem({
 
   const handleEdit = () => {
     setIsEdit(false);
-    onEdit({ id, name: value, sort_order: 1 });
+    onEdit({ id, name: value });
   };
 
   return (
