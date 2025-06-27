@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
-import { ShoppingListData } from '@/types/shoppingList';
+import { ShoppingListModel } from '@/types/shopping-list';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -10,7 +10,7 @@ export default function SharePage() {
   const params = useParams();
   const router = useRouter();
 
-  const [shoppingList, setShoppingList] = useState<ShoppingListData | null>(null);
+  const [shoppingList, setShoppingList] = useState<ShoppingListModel | null>(null);
 
   // ローカルストレージに保存
   const handleDownload = () => {

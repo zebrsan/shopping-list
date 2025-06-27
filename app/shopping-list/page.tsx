@@ -6,17 +6,22 @@ import { Plus } from 'lucide-react';
 // lib
 import { getLocalStorage, localStorageKey, setLocalStorage } from '@/lib/localStorage';
 // types
-import { ShoppingListData } from '@/types/shoppingList';
+import { ShoppingListModel } from '@/types/shopping-list';
 // components
 import { AddShoppingListDialog } from './add-shopping-list-dialog';
 import { ShoppingList } from './shopping-list';
 
 export default function ShoppingListsPage() {
-  const [shoppingLists, setShoppingLists] = useState<ShoppingListData[]>([]);
+  const [shoppingLists, setShoppingLists] = useState<ShoppingListModel[]>([]);
   const [openShoppingListDialog, setOpenShoppingListDialog] = useState(false);
 
+  useEffect(() => {
+    const data = getLocalStorage<ShoppingListModel[]>(localStorageKey.SHOPPING_LIST);
+    if (data) setShoppingLists(data);
+  }, []);
+
   // Update React state and persist the updated shopping lists to localStorage
-  const updateShoppingLists = (next: ShoppingListData[]) => {
+  const updateShoppingLists = (next: ShoppingListModel[]) => {
     setShoppingLists(next);
     setLocalStorage(localStorageKey.SHOPPING_LIST, next);
   };
@@ -46,11 +51,6 @@ export default function ShoppingListsPage() {
     const next = shoppingLists.filter((item) => item.id !== id);
     updateShoppingLists(next);
   };
-
-  useEffect(() => {
-    const data = getLocalStorage<ShoppingListData[]>(localStorageKey.SHOPPING_LIST);
-    if (data) setShoppingLists(data);
-  }, []);
 
   return (
     <>
